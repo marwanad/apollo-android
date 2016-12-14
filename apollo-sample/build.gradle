@@ -1,9 +1,13 @@
 buildscript {
+  repositories { flatDir name: 'libs', dirs: "../apollo-gradle-plugin/build/libs" }
   dependencies {
+    classpath 'test-plugin:apollo-gradle-plugin:0.0.1-SNAPSHOT'
     classpath dep.androidPlugin
+    classpath dep.gradleNodePlugin
   }
 }
 
+apply plugin: 'com.apollostack.android'
 apply plugin: 'com.android.application'
 
 android {
