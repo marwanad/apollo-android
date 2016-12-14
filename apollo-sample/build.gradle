@@ -6,6 +6,13 @@ buildscript {
     classpath dep.gradleNodePlugin
   }
 }
+sourceSets {
+  main {
+    apollo {
+      sourcesDir = 'hello'
+    }
+  }
+}
 
 apply plugin: 'com.apollostack.android'
 apply plugin: 'com.android.application'
@@ -17,7 +24,7 @@ android {
   defaultConfig {
     applicationId "com.example.apollostack.sample"
     minSdkVersion 15
-    targetSdkVersion 25
+    targetSdkVersion 24
   }
 }
 
