@@ -1,6 +1,7 @@
 package com.apollostack.android.gradle
 
 import com.moowork.gradle.node.npm.NpmTask
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
 class ApolloCodeGenInstallTask extends NpmTask {
@@ -11,10 +12,15 @@ class ApolloCodeGenInstallTask extends NpmTask {
   public ApolloCodeGenInstallTask() {
     group = ApolloPlugin.TASK_GROUP
     description = "Runs npm install for apollo-codegen"
+
+    File apolloPackageDir = this.project.file("package.json")
+    if (!apolloPackageDir.isFile()) {
+      apolloPackageDir.write(buildApolloAndroidPackage())
+    }
+
+    setArgs(["install"])
+
     File installDir = this.project.file(INSTALL_DIR)
-
-    setArgs(["install", "apollo-codegen@$APOLLOCODEGEN_VERSION"])
-
     if (!installDir.exists()) {
       installDir.mkdirs()
     } else {
@@ -33,5 +39,26 @@ class ApolloCodeGenInstallTask extends NpmTask {
       version = input.version
     }
     return version
+  }
+
+  private String buildApolloAndroidPackage() {
+    def builder = new JsonBuilder()
+
+    builder {
+      delegate.name 'apollo-android'
+      version '0.0.1'
+      delegate.description 'Generates Java code based on a GraphQL schema and query documents. Uses apollo-codegen' +
+          ' under the hood.'
+      delegate.dependencies(
+          'apollo-codegen': APOLLOCODEGEN_VERSION
+      )
+      repository(
+          type: 'git',
+          url: 'git+https://github.com/apollostack/apollo-android.git'
+      )
+      author 'Apollo'
+      license 'MIT'
+    }
+    return builder.toPrettyString()
   }
 }
