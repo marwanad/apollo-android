@@ -11,15 +11,16 @@ data class Operation(
     val operationType: String,
     val variables: List<Variable>,
     val source: String,
-    val fields: List<Field>
-) : CodeGenerator {
-  override fun toTypeSpec(): TypeSpec =
-    SchemaTypeSpecBuilder()
-        .build(INTERFACE_TYPE_SPEC_NAME, fields, emptyList(), emptyList())
-        .toBuilder()
-        .addSuperinterface(ClassName.get(Operation.Data::class.java))
-        .build()
-        .resolveNestedTypeNameDuplication(emptyList())
+    val fields: List<Field>,
+    val path: String
+    ) : CodeGenerator {
+  override fun toTypeSpec(irPkgName: String): TypeSpec =
+      SchemaTypeSpecBuilder(INTERFACE_TYPE_SPEC_NAME, fields, emptyList(), emptyList(), irPkgName)
+          .build()
+          .toBuilder()
+          .addSuperinterface(ClassName.get(Operation.Data::class.java))
+          .build()
+          .resolveNestedTypeNameDuplication(emptyList())
 
   companion object {
     val INTERFACE_TYPE_SPEC_NAME = "Data"

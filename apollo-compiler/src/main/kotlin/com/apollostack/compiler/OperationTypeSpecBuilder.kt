@@ -1,6 +1,5 @@
 package com.apollostack.compiler
 
-import com.apollostack.compiler.ir.CodeGenerator
 import com.apollostack.compiler.ir.Fragment
 import com.apollostack.compiler.ir.Operation
 import com.apollostack.compiler.ir.Variable
@@ -10,10 +9,16 @@ import javax.lang.model.element.Modifier
 class OperationTypeSpecBuilder(
     val operation: Operation,
     val fragments: List<Fragment>,
-    val generateClasses: Boolean
-) : CodeGenerator {
+    val generateClasses: Boolean,
+    val operationPkgName: String,
+    val irPackageName: String
+) : TypeSpecBuilder {
   private val QUERY_TYPE_NAME = operation.operationName.capitalize()
   private val QUERY_VARIABLES_CLASS_NAME = ClassName.get("", "$QUERY_TYPE_NAME.Variables")
+
+  override fun packageName(): String {
+    return operationPkgName
+  }
 
   override fun toTypeSpec(): TypeSpec {
     return TypeSpec.classBuilder(QUERY_TYPE_NAME)
@@ -23,7 +28,7 @@ class OperationTypeSpecBuilder(
         .addQueryDocumentDefinition(fragments)
         .addQueryConstructor(operation.variables.isNotEmpty())
         .addVariablesDefinition(operation.variables)
-        .addType(operation.toTypeSpec().let {
+        .addType(operation.toTypeSpec(irPackageName).let {
           if (generateClasses) it.convertToPOJO(Modifier.PUBLIC, Modifier.STATIC) else it
         })
         .build()
@@ -88,7 +93,7 @@ class OperationTypeSpecBuilder(
     )
 
     if (variables.isNotEmpty()) {
-      addType(VariablesTypeSpecBuilder(variables).build())
+      addType(VariablesTypeSpecBuilder(variables, irPackageName).build())
     }
 
     return this

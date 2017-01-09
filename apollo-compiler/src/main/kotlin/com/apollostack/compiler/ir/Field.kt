@@ -17,18 +17,20 @@ data class Field(
     val fragmentSpreads: List<String>?,
     val inlineFragments: List<InlineFragment>?
 ) : CodeGenerator {
-  override fun toTypeSpec(): TypeSpec =
-      SchemaTypeSpecBuilder().build(normalizedName(), fields ?: emptyList(), fragmentSpreads ?: emptyList(),
-          inlineFragments ?: emptyList())
+  override fun toTypeSpec(irPkgName: String): TypeSpec =
+      SchemaTypeSpecBuilder(normalizedName(), fields ?: emptyList(), fragmentSpreads ?: emptyList(),
+          inlineFragments ?: emptyList(), irPkgName)
+          .build()
 
-  fun toMethodSpec(): MethodSpec =
+  fun toMethodSpec(irPkgName: String = ""): MethodSpec =
       MethodSpec.methodBuilder(responseName)
-          .returns(toTypeName(methodResponseType()))
+          .returns(toTypeName(methodResponseType(), irPkgName))
           .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
           .build()
 
-  private fun toTypeName(responseType: String): TypeName =
-      Type.resolveByName(responseType, isOptional()).toJavaTypeName()
+  private fun toTypeName(responseType: String, irPkgName: String): TypeName =
+      Type.resolveByName(responseType, isOptional()).toJavaTypeName(
+          if (fields?.any() ?: false || hasFragments()) "" else irPkgName)
 
   fun normalizedName() = responseName.capitalize().singularize()
 

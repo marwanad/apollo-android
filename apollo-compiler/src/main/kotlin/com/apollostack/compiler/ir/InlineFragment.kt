@@ -9,15 +9,16 @@ data class InlineFragment(
     val fields: List<Field>,
     val fragmentSpreads: List<String>?
 ) : CodeGenerator {
-  override fun toTypeSpec(): TypeSpec =
-    TypeSpec.interfaceBuilder(interfaceName())
-        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .addMethods(fields.map(Field::toMethodSpec))
-        .addTypes(fields.filter(Field::isNonScalar).map { field ->
-          SchemaTypeSpecBuilder().build(field.normalizedName(), field.fields ?: emptyList(), fragmentSpreads ?: emptyList(),
-              field.inlineFragments ?: emptyList())
-        })
-        .build()
+  override fun toTypeSpec(irPkgName: String): TypeSpec =
+      TypeSpec.interfaceBuilder(interfaceName())
+          .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+          .addMethods(fields.map { it.toMethodSpec() })
+          .addTypes(fields.filter(Field::isNonScalar).map { field ->
+            SchemaTypeSpecBuilder(field.normalizedName(), field.fields ?: emptyList(), fragmentSpreads ?: emptyList(),
+                field.inlineFragments ?: emptyList(), irPkgName)
+                .build()
+          })
+          .build()
 
   fun interfaceName() = "$INTERFACE_PREFIX${typeCondition.capitalize()}"
 

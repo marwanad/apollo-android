@@ -1,7 +1,7 @@
 package com.apollostack.compiler.ir
 
 import com.apollostack.compiler.InputObjectTypeSpecBuilder
-import com.squareup.javapoet.*
+import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
 data class TypeDeclaration(
@@ -11,11 +11,11 @@ data class TypeDeclaration(
     val values: List<TypeDeclarationValue>?,
     val fields: List<TypeDeclarationField>?
 ) : CodeGenerator {
-  override fun toTypeSpec(): TypeSpec {
+  override fun toTypeSpec(irPkgName: String): TypeSpec {
     if (kind == "EnumType") {
       return enumTypeToTypeSpec()
     } else if (kind == "InputObjectType") {
-      return inputObjectToTypeSpec()
+      return inputObjectToTypeSpec(irPkgName)
     } else {
       throw UnsupportedOperationException("unsupported $kind type declaration")
     }
@@ -38,5 +38,6 @@ data class TypeDeclaration(
     return builder.build()
   }
 
-  private fun inputObjectToTypeSpec() = InputObjectTypeSpecBuilder(name, fields ?: emptyList()).build()
+  private fun inputObjectToTypeSpec(irPkgName: String) = InputObjectTypeSpecBuilder(name, fields ?: emptyList(),
+      irPkgName).build()
 }

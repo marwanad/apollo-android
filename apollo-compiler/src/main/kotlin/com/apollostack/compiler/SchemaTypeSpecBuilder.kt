@@ -7,9 +7,9 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
-class SchemaTypeSpecBuilder {
-  fun build(typeName: String, fields: List<Field>, fragmentSpreads: List<String>,
-      inlineFragments: List<InlineFragment>): TypeSpec =
+class SchemaTypeSpecBuilder(val typeName: String, val fields: List<Field>, val fragmentSpreads: List<String> = emptyList(),
+    val inlineFragments: List<InlineFragment> = emptyList(), val irPkgName: String) {
+  fun build(): TypeSpec =
       TypeSpec.interfaceBuilder(typeName)
           .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
           .addFieldAccessorMethods(fields)
@@ -20,7 +20,7 @@ class SchemaTypeSpecBuilder {
           .build()
 
   private fun TypeSpec.Builder.addFieldAccessorMethods(fields: List<Field>): TypeSpec.Builder {
-    val methodSpecs = fields.map(Field::toMethodSpec)
+    val methodSpecs = fields.map { it.toMethodSpec(irPkgName) }
     return addMethods(methodSpecs)
   }
 
@@ -28,19 +28,19 @@ class SchemaTypeSpecBuilder {
   private fun TypeSpec.Builder.addInnerFragmentTypes(fragments: List<String>): TypeSpec.Builder {
     if (fragments.isNotEmpty()) {
       addMethod(newFragmentAccessorMethodSpec())
-      addType(newFragmentInterfaceSpec(fragments))
+      addType(newFragmentInterfaceSpec(fragments, irPkgName))
     }
     return this
   }
 
   /** Returns a list of types referenced by the inner fields in the provided fields */
   private fun TypeSpec.Builder.addInnerTypes(fields: List<Field>): TypeSpec.Builder {
-    val typeSpecs = fields.filter(Field::isNonScalar).map(Field::toTypeSpec)
+    val typeSpecs = fields.filter(Field::isNonScalar).map { it.toTypeSpec(irPkgName) }
     return addTypes(typeSpecs)
   }
 
   private fun TypeSpec.Builder.addInlineFragmentTypes(inlineFragments: List<InlineFragment>): TypeSpec.Builder {
-    val typeSpecs = inlineFragments.map { it.toTypeSpec() }
+    val typeSpecs = inlineFragments.map { it.toTypeSpec(irPkgName) }
     return addTypes(typeSpecs)
   }
 
@@ -65,12 +65,12 @@ class SchemaTypeSpecBuilder {
             .build()
 
     /** Returns a generic `Fragments` interface with methods for each of the provided fragments */
-    private fun newFragmentInterfaceSpec(fragments: List<String>): TypeSpec =
+    private fun newFragmentInterfaceSpec(fragments: List<String>, irPkgName: String): TypeSpec =
         TypeSpec.interfaceBuilder(FRAGMENTS_INTERFACE_NAME)
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .addMethods(fragments.map {
               MethodSpec.methodBuilder(it.decapitalize())
-                  .returns(ClassName.get("", it.capitalize()))
+                  .returns(ClassName.get("$irPkgName.${GraphQLCompiler.FRAGMENT_PACKAGE_PREFIX}", it.capitalize()))
                   .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                   .build()
             })
