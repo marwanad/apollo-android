@@ -1,5 +1,6 @@
 package com.apollostack.compiler
 
+import com.apollostack.compiler.ir.CodeGenerator
 import com.apollostack.compiler.ir.Fragment
 import com.apollostack.compiler.ir.Operation
 import com.apollostack.compiler.ir.Variable
@@ -9,26 +10,20 @@ import javax.lang.model.element.Modifier
 class OperationTypeSpecBuilder(
     val operation: Operation,
     val fragments: List<Fragment>,
-    val generateClasses: Boolean,
-    val operationPkgName: String,
-    val irPackageName: String
-) : TypeSpecBuilder {
+    val generateClasses: Boolean
+) : CodeGenerator {
   private val QUERY_TYPE_NAME = operation.operationName.capitalize()
   private val QUERY_VARIABLES_CLASS_NAME = ClassName.get("", "$QUERY_TYPE_NAME.Variables")
 
-  override fun packageName(): String {
-    return operationPkgName
-  }
-
-  override fun toTypeSpec(): TypeSpec {
+  override fun toTypeSpec(fragmentsPkgName: String, typesPkgName: String): TypeSpec {
     return TypeSpec.classBuilder(QUERY_TYPE_NAME)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addQuerySuperInterface(operation.variables.isNotEmpty())
         .addOperationDefinition(operation)
         .addQueryDocumentDefinition(fragments)
         .addQueryConstructor(operation.variables.isNotEmpty())
-        .addVariablesDefinition(operation.variables)
-        .addType(operation.toTypeSpec(irPackageName).let {
+        .addVariablesDefinition(operation.variables, typesPkgName)
+        .addType(operation.toTypeSpec(fragmentsPkgName, typesPkgName).let {
           if (generateClasses) it.convertToPOJO(Modifier.PUBLIC, Modifier.STATIC) else it
         })
         .build()
@@ -77,7 +72,7 @@ class OperationTypeSpecBuilder(
     return this
   }
 
-  private fun TypeSpec.Builder.addVariablesDefinition(variables: List<Variable>): TypeSpec.Builder {
+  private fun TypeSpec.Builder.addVariablesDefinition(variables: List<Variable>, typesPkgName: String): TypeSpec.Builder {
     val queryFieldClassName = if (variables.isNotEmpty()) QUERY_VARIABLES_CLASS_NAME else ClassNames.GRAPHQL_OPERATION_VARIABLES
     addField(FieldSpec.builder(queryFieldClassName, VARIABLES_FIELD_NAME)
         .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
@@ -93,7 +88,7 @@ class OperationTypeSpecBuilder(
     )
 
     if (variables.isNotEmpty()) {
-      addType(VariablesTypeSpecBuilder(variables, irPackageName).build())
+      addType(VariablesTypeSpecBuilder(variables, typesPkgName).build())
     }
 
     return this

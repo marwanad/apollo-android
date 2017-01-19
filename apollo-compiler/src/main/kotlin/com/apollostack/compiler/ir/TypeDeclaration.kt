@@ -11,11 +11,11 @@ data class TypeDeclaration(
     val values: List<TypeDeclarationValue>?,
     val fields: List<TypeDeclarationField>?
 ) : CodeGenerator {
-  override fun toTypeSpec(irPkgName: String): TypeSpec {
+  override fun toTypeSpec(fragmentsPkgName: String, typesPkgName: String): TypeSpec {
     if (kind == "EnumType") {
       return enumTypeToTypeSpec()
     } else if (kind == "InputObjectType") {
-      return inputObjectToTypeSpec(irPkgName)
+      return inputObjectToTypeSpec(typesPkgName)
     } else {
       throw UnsupportedOperationException("unsupported $kind type declaration")
     }
@@ -38,6 +38,6 @@ data class TypeDeclaration(
     return builder.build()
   }
 
-  private fun inputObjectToTypeSpec(irPkgName: String) = InputObjectTypeSpecBuilder(name, fields ?: emptyList(),
-      irPkgName).build()
+  private fun inputObjectToTypeSpec(typesPkgName: String) =
+      InputObjectTypeSpecBuilder(name, fields ?: emptyList(), typesPkgName).build()
 }

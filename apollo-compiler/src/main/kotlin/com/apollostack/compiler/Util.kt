@@ -4,14 +4,6 @@ import com.squareup.javapoet.*
 import java.io.File
 import javax.lang.model.element.Modifier
 
-fun String.formatPackageName(): String {
-  val parts = split(File.separatorChar)
-  (parts.size - 1 downTo 2)
-      .filter { parts[it - 2] == "src" && parts[it] == "graphql" }
-      .forEach { return parts.subList(it + 1, parts.size).dropLast(1).joinToString(".") }
-  throw IllegalArgumentException("Files must be organized like src/main/graphql/...")
-}
-
 fun String.normalizeTypeName() = removeSuffix("!").removeSurrounding("[", "]").removeSuffix("!")
 
 fun TypeName.overrideTypeName(typeNameOverrideMap: Map<String, String>): TypeName {

@@ -13,25 +13,38 @@ open class GraphQLCompiler {
   fun write(irFile: File, outputDir: File, generateClasses: Boolean = false) {
     val ir = irAdapter.fromJson(irFile.readText())
     val irPackageName = irFile.absolutePath.formatPackageName()
+    val fragmentsPackage = "$irPackageName.fragment"
+    val typesPackage = "$irPackageName.type"
+
     val operationTypeBuilders = ir.operations.map {
-      OperationTypeSpecBuilder(it, ir.fragments, generateClasses, it.path.formatPackageName(), irPackageName)
+      OperationTypeSpecBuilder(it, ir.fragments, generateClasses)
     }
     val fragmentTypeBuilders = ir.fragments.map {
-      FragmentTypeSpecBuilder(it, generateClasses, "$irPackageName.$FRAGMENT_PACKAGE_PREFIX", irPackageName)
+      FragmentTypeSpecBuilder(it, generateClasses)
     }
-    val typeDeclarationTypeBuilders = ir.typesUsed.map {
-      TypeDeclarationTypeSpecBuilder(it, "$irPackageName.$TYPE_PACKAGE_PREFIX", irPackageName)
-    }
+    val typeDeclarationTypeBuilders = ir.typesUsed.map(::TypeDeclarationTypeSpecBuilder)
 
     (operationTypeBuilders + fragmentTypeBuilders + typeDeclarationTypeBuilders).forEach {
-      JavaFile.builder(it.packageName(), it.toTypeSpec()).build().writeTo(outputDir)
+      val javaFilePackageName = when (it) {
+        is OperationTypeSpecBuilder -> it.operation.path.formatPackageName()
+        is FragmentTypeSpecBuilder -> fragmentsPackage
+        is TypeDeclarationTypeSpecBuilder -> typesPackage
+        else -> ""
+      }
+      JavaFile.builder(javaFilePackageName, it.toTypeSpec(fragmentsPackage, typesPackage)).build().writeTo(outputDir)
     }
+  }
+
+  fun String.formatPackageName(): String {
+    val parts = split(File.separatorChar)
+    (parts.size - 1 downTo 2)
+        .filter { parts[it - 2] == "src" && parts[it] == "graphql" }
+        .forEach { return parts.subList(it + 1, parts.size).dropLast(1).joinToString(".") }
+    throw IllegalArgumentException("Files must be organized like src/main/graphql/...")
   }
 
   companion object {
     const val FILE_EXTENSION = "graphql"
     val OUTPUT_DIRECTORY = listOf("generated", "source", "apollo")
-    val FRAGMENT_PACKAGE_PREFIX = "fragment"
-    val TYPE_PACKAGE_PREFIX = "type"
   }
 }

@@ -2,7 +2,6 @@ package com.apollostack.compiler.ir.graphql
 
 import com.apollostack.compiler.Annotations
 import com.apollostack.compiler.ClassNames
-import com.apollostack.compiler.GraphQLCompiler
 import com.apollostack.compiler.normalizeTypeName
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
@@ -22,8 +21,8 @@ sealed class Type(val isOptional: kotlin.Boolean) {
 
   class Unknown(isOptional: kotlin.Boolean, val typeName: kotlin.String) : Type(isOptional)
 
-  fun toJavaTypeName(packageName: kotlin.String = "") = graphQlTypeToJavaTypeName(this, !isOptional, isOptional,
-      packageName)
+  fun toJavaTypeName(typesPkgName: kotlin.String = "") =
+      graphQlTypeToJavaTypeName(this, !isOptional, isOptional, typesPkgName)
 
   companion object {
     private val GRAPHQLTYPE_TO_JAVA_TYPE = mapOf(
@@ -45,12 +44,12 @@ sealed class Type(val isOptional: kotlin.Boolean) {
     }
 
     fun graphQlTypeToJavaTypeName(type: Type, primitive: kotlin.Boolean, isOptional: kotlin.Boolean,
-        packageName: kotlin.String = ""): TypeName {
+        typesPkgName: kotlin.String = ""): TypeName {
       val typeName = when (type) {
         is Type.List -> ClassNames.parameterizedListOf(graphQlTypeToJavaTypeName(type.listType, false, false,
-            packageName))
+            typesPkgName))
         is Unknown -> ClassName.get(
-            if (packageName.isEmpty()) "" else "$packageName.${GraphQLCompiler.TYPE_PACKAGE_PREFIX}", type.typeName)
+            if (typesPkgName.isEmpty()) "" else typesPkgName, type.typeName)
         else ->
           GRAPHQLTYPE_TO_JAVA_TYPE[type.javaClass]!!.let {
             if (primitive) it else it.box()

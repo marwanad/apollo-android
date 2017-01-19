@@ -3,5 +3,5 @@ package com.apollostack.compiler.ir
 import com.squareup.javapoet.TypeSpec
 
 interface CodeGenerator {
-  fun toTypeSpec(irPkgName: String): TypeSpec
+  fun toTypeSpec(fragmentsPkgName: String = "", typesPkgName: String = ""): TypeSpec
 }

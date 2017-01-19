@@ -7,7 +7,7 @@ import javax.lang.model.element.Modifier
 
 class VariablesTypeSpecBuilder(
     val variables: List<Variable>,
-    val irPackageName: String
+    val typesPkgName: String
 ) {
   fun build(): TypeSpec =
       TypeSpec.classBuilder(VARIABLES_CLASS_NAME)
@@ -19,7 +19,7 @@ class VariablesTypeSpecBuilder(
           .addBuilder()
           .build()
 
-  private fun Variable.javaTypeName() = Type.resolveByName(type, !type.endsWith("!")).toJavaTypeName(irPackageName)
+  private fun Variable.javaTypeName() = Type.resolveByName(type, !type.endsWith("!")).toJavaTypeName(typesPkgName)
 
   private fun TypeSpec.Builder.addVariableFields(): TypeSpec.Builder =
       addFields(variables.map { variable ->
@@ -60,7 +60,7 @@ class VariablesTypeSpecBuilder(
     } else {
       val builderFields = variables.map { it.name.decapitalize() to it.graphQLType() }
       return addMethod(BuilderTypeSpecBuilder.builderFactoryMethod())
-          .addType(BuilderTypeSpecBuilder(VARIABLES_TYPE_NAME, builderFields, emptyMap(), irPackageName).build())
+          .addType(BuilderTypeSpecBuilder(VARIABLES_TYPE_NAME, builderFields, emptyMap(), typesPkgName).build())
     }
   }
 
