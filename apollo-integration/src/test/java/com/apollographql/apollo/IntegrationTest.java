@@ -130,6 +130,7 @@ public class IntegrationTest {
         .split("\\s*,\\s*")
     ));
 
+    assertThat("2").isEqualTo("4");
     AllPlanets.Data.Planet firstPlanet = data.allPlanets().planets().get(0);
     assertThat(firstPlanet.fragments().planetFragment().climates()).isEqualTo(Collections.singletonList("arid"));
     assertThat(firstPlanet.fragments().planetFragment().surfaceWater()).isWithin(1d);
